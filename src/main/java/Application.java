@@ -34,21 +34,19 @@ public class Application {
         JavaPairRDD<String, Integer> wordCounts1 = assignOnes1.reduceByKey((i1, i2) -> i1 + i2).sortByKey();
         JavaPairRDD<String, Integer> wordCounts2 = assignOnes2.reduceByKey((i1, i2) -> i1 + i2).sortByKey();
 
-        printJavaPairRDD(wordCounts1);
+        JavaPairRDD<String, Tuple2<Optional<Integer>, Optional<Integer>>> outerJoinedRdd = wordCounts1.fullOuterJoin(wordCounts2);
 
-        JavaPairRDD<String, Tuple2<Optional<Integer>, Optional<Integer>>> rdd = wordCounts1.fullOuterJoin(wordCounts2);
-        printJavaPairRDD(rdd);
+        JavaPairRDD<String, Tuple2<Integer, Integer>> result = outerJoinedRdd.mapValues(tuple -> {
+            if(!tuple._1().isPresent()) {
+                return new Tuple2<>(0, tuple._2().get());
+            } else if(!tuple._2().isPresent()) {
+                return new Tuple2<>(tuple._1().get(), 0);
+            } else {
+                return new Tuple2<>(tuple._1().get(), tuple._2().get());
+            }
+        });
 
-
-//        JavaPairRDD<String, Tuple2<Integer, Integer>> pls = rdd.mapToPair(tuple -> {
-//            if(tuple._2()._1().isPresent()) {
-//                return new Tuple2<>(tuple._2()._1().get(), tuple._2()._2().get());
-//            } else {
-//                return new Tuple2<>(0, tuple._2()._2().get());
-//            }
-//        });
-
-        printJavaPairRDD(rdd);
+        printJavaPairRDD(result);
 
     }
 
