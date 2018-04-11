@@ -7,6 +7,7 @@ import org.apache.spark.sql.SparkSession;
 import scala.Tuple2;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 public class Application {
@@ -46,11 +47,20 @@ public class Application {
             }
         });
 
-        printJavaPairRDD(result);
+        // do dot product calculation
+        JavaRDD<Tuple2<Integer, Integer>> resultTuple = result.values();
+        printJavaRDD(resultTuple);
+        JavaRDD<Integer> dotProduct = resultTuple.map(s -> s._1() * s._2());
+        printJavaRDD(dotProduct);
+        // TODO - Sum all entries in dotProduct & calculate vector lengths
 
     }
 
     private static <K, V> void printJavaPairRDD(JavaPairRDD<K, V> rdd) {
         rdd.foreach(entry -> System.out.println(entry._1 + "  |  "  + entry._2));
+    }
+
+    private static <K> void printJavaRDD(JavaRDD<K> rdd) {
+        rdd.foreach(entry -> System.out.println(entry.toString()));
     }
 }
