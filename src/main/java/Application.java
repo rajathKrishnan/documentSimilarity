@@ -19,10 +19,10 @@ public class Application {
         SparkConf sparkConf = new SparkConf().setMaster("local").setAppName("Document Similarity");
         JavaSparkContext javaSparkContext = new JavaSparkContext(sparkConf);
         SparkSession sparkSession = SparkSession.builder().sparkContext(javaSparkContext.sc()).getOrCreate();
-        cosineSimilarity(sparkSession);
+        System.out.println(cosineSimilarity(sparkSession));
     }
 
-    private static void cosineSimilarity(SparkSession sparkSession) {
+    private static double cosineSimilarity(SparkSession sparkSession) {
         JavaRDD<String> lines1 = sparkSession.read().textFile(DOC1_PATH).javaRDD();
         JavaRDD<String> lines2 = sparkSession.read().textFile(DOC2_PATH).javaRDD();
 
@@ -49,11 +49,23 @@ public class Application {
 
         // do dot product calculation
         JavaRDD<Tuple2<Integer, Integer>> resultTuple = result.values();
-        printJavaRDD(resultTuple);
         JavaRDD<Integer> dotProduct = resultTuple.map(s -> s._1() * s._2());
-        printJavaRDD(dotProduct);
-        // TODO - Sum all entries in dotProduct & calculate vector lengths
 
+        int sumDotProduct = dotProduct.collect().stream().mapToInt(Integer::intValue).sum();
+        return cosineSimilarity(wordCounts1, wordCounts2, sumDotProduct);
+    }
+
+    private static double cosineSimilarity(JavaPairRDD<String, Integer> a, JavaPairRDD<String, Integer> b, int dotProduct) {
+        return dotProduct / (calculateLength(a) * calculateLength(b));
+    }
+
+    private static double calculateLength(JavaPairRDD<String, Integer> rdd) {
+        List<Integer> values = rdd.values().collect();
+        int sum = 0;
+        for(Integer i : values) {
+            sum += Math.pow(i, i);
+        }
+        return Math.sqrt(sum);
     }
 
     private static <K, V> void printJavaPairRDD(JavaPairRDD<K, V> rdd) {
